@@ -57,8 +57,8 @@ class AboutDialog(QDialog):
 
         # 链接
         links = QLabel(
-            '💻 <a href="https://github.com/pypackager">GitHub</a> | '
-            '📖 <a href="https://pypackager.readthedocs.io">文档</a>'
+'💻 <a href="https://github.com/torinaViolet/PyPackager">GitHub</a> | '
+            '📖 <a href="https://github.com/torinaViolet/PyPackager#-使用指南">文档</a>'
         )
         links.setOpenExternalLinks(True)
         links.setAlignment(Qt.AlignmentFlag.AlignCenter)

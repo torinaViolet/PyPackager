@@ -75,7 +75,7 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/你的用户名/PyPackager.git
+git https://github.com/torinaViolet/PyPackager.git
 cd PyPackager
 
 # 创建虚拟环境 (推荐)
