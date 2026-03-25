@@ -99,6 +99,9 @@ class ProjectAnalyzer:
             # 处理 from xxx import yyy
             elif isinstance(node, ast.ImportFrom):
                 if node.module:
+                    # 跳过相对导入（from .xxx / from ..xxx），它们一定是项目内部模块
+                    if node.level and node.level > 0:
+                        continue
                     top_level = node.module.split('.')[0]
                     result.all_imports.add(node.module)
                     result.all_imports.add(top_level)
@@ -113,16 +116,8 @@ class ProjectAnalyzer:
 
     def _classify_imports(self, result: AnalysisResult, project_dir: str):
         """将导入分类为标准库/第三方/本地模块。"""
-        # 获取本地模块名（项目目录中的包和文件）
-        local_names = set()
-        for item in os.listdir(project_dir):
-            path = os.path.join(project_dir, item)
-            if os.path.isdir(path) and os.path.isfile(
-                os.path.join(path, '__init__.py')
-            ):
-                local_names.add(item)
-            elif item.endswith('.py'):
-                local_names.add(item[:-3])
+        # 递归收集项目中所有本地模块名（包括子目录中的模块）
+        local_names = self._collect_local_module_names(project_dir)
 
         for imp in result.all_imports:
             top_level = imp.split('.')[0]
@@ -138,6 +133,38 @@ class ProjectAnalyzer:
                 for lib in self.KNOWN_LARGE_LIBS:
                     if top_level == lib or top_level == lib.lower():
                         result.detected_large_libs.add(lib)
+
+    def _collect_local_module_names(self, project_dir: str) -> Set[str]:
+        """
+        递归收集项目目录中所有 Python 模块和包的名称。
+        包括顶层和子目录中的 .py 文件名（不含扩展名）及含 __init__.py 的包目录名。
+        """
+        local_names = set()
+        skip_dirs = {
+            '__pycache__', '.git', '.svn', 'node_modules',
+            '.venv', 'venv', 'env', '.env', '.tox',
+            'dist', 'build', '.eggs',
+        }
+
+        for root, dirs, files in os.walk(project_dir):
+            # 跳过无关目录
+            dirs[:] = [
+                d for d in dirs
+                if d not in skip_dirs and not d.endswith('.egg-info')
+            ]
+
+            # 添加包目录名（含 __init__.py 的目录）
+            for d in dirs:
+                pkg_path = os.path.join(root, d)
+                if os.path.isfile(os.path.join(pkg_path, '__init__.py')):
+                    local_names.add(d)
+
+            # 添加 .py 文件的模块名
+            for f in files:
+                if f.endswith('.py') and f != '__init__.py':
+                    local_names.add(f[:-3])
+
+        return local_names
 
     def _get_stdlib_modules(self) -> Set[str]:
         """获取当前 Python 版本的标准库模块列表。"""

@@ -1,6 +1,7 @@
 """主窗口 - 整合所有面板和功能"""
 
 import os
+import sys
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
     QListWidget, QListWidgetItem, QStackedWidget,
@@ -24,6 +25,7 @@ from core.analyzer import ProjectAnalyzer
 from core.builder import Builder
 from core.config_manager import ConfigManager
 from core.smart_excluder import SmartExcluder
+from core.venv_detector import VenvDetector
 
 
 class MainWindow(QMainWindow):
@@ -40,6 +42,7 @@ class MainWindow(QMainWindow):
         self._analyzer = ProjectAnalyzer()
         self._builder = Builder(self._config_manager)
         self._smart_excluder = SmartExcluder()
+        self._venv_detector = VenvDetector()
 
         # 状态
         self._project_dir = ""
@@ -206,6 +209,30 @@ class MainWindow(QMainWindow):
 
         self._project_dir = os.path.dirname(os.path.abspath(file_path))
         self.resource_panel.set_project_dir(self._project_dir)
+
+                # 更新控制台工作目录
+        self.console_output.set_project_dir(self._project_dir)
+
+        # 检测虚拟环境，配置 Python 解释器
+        venv_info = self._venv_detector.detect_venv(self._project_dir)
+        if venv_info.get("found"):
+            python_path = venv_info.get("python_path", "")
+            venv_path = venv_info.get("path", "")
+            venv_type = venv_info.get("type", "venv")
+            # 只有检测到虚拟环境时，才使用外部进程模式
+            self.console_output.set_python_path(python_path)
+            # 终端也激活虚拟环境（pip/python 命令使用项目环境）
+            self.console_output.set_venv_path(venv_path)
+            self.console_output.append_info(
+                f"检测到{venv_type}虚拟环境: {venv_path}"
+            )
+            self.console_output.append_info(
+                f"Python 解释器: {python_path} ({venv_info.get('python_version', '')})"
+            )
+        else:
+            self.console_output.append_info(
+                "未检测到虚拟环境，Python 控制台将使用内置解释器"
+            )
 
         # 设置到 ConfigManager
         self._config_manager.set("entry.script", file_path)
@@ -534,3 +561,8 @@ class MainWindow(QMainWindow):
         """打开关于对话框"""
         dialog = AboutDialog(self)
         dialog.exec()
+
+    def closeEvent(self, event):
+        """窗口关闭时清理子进程。"""
+        self.console_output.cleanup()
+        super().closeEvent(event)
