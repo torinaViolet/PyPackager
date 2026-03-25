@@ -11,6 +11,8 @@
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20|%20Linux%20|%20macOS-lightgrey)]()
 
+<img src="preview/主界面.png" width="800" alt="PyPackager 主界面">
+
 </div>
 
 ---
@@ -43,24 +45,32 @@
 
 ## 📸 界面预览
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│  📂 打开项目  💾 保存配置  📂 加载配置  🔨 开始构建  ⏹ 停止  🌙  ⚙  │
-├────────────┬─────────────────────────────────────────────────┤
-│            │                                                 │
-│ 📌 基本信息 │   项目名称: [MyApp                        ]     │
-│ 📦 依赖管理 │   版本号:   [1.0.0                        ]     │
-│ 📁 资源文件 │   入口文件: [main.py                    ] [📂]  │
-│ ⚙ 构建选项  │   图标文件: [icon.png                   ] [📂]  │
-│ ✂️ 库裁剪   │   输出目录: [./dist                     ] [📂]  │
-│            │                                                 │
-├────────────┴─────────────────────────────────────────────────┤
-│ 📟 构建控制台                                           🗑️ 清空│
-│ [10:30:00] ℹ 已打开项目: D:\MyProject                        │
-│ [10:30:01] ℹ 扫描了 15 个文件，发现 3 个第三方依赖            │
-│ [10:30:01] ✅ 依赖扫描完成!                                   │
-└──────────────────────────────────────────────────────────────┘
-```
+<table>
+  <tr>
+    <td align="center"><b>📦 依赖管理</b></td>
+    <td align="center"><b>⚙ 构建选项</b></td>
+  </tr>
+  <tr>
+    <td><img src="preview/依赖管理.png" width="400" alt="依赖管理"></td>
+    <td><img src="preview/构建选项.png" width="400" alt="构建选项"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>📁 资源文件</b></td>
+    <td align="center"><b>✂️ 库裁剪</b></td>
+  </tr>
+  <tr>
+    <td><img src="preview/资源文件.png" width="400" alt="资源文件"></td>
+    <td><img src="preview/库裁剪.png" width="400" alt="库裁剪"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>🛠 资源路径生成器</b></td>
+    <td align="center"><b>⚙ 自定义裁剪配置</b></td>
+  </tr>
+  <tr>
+    <td><img src="preview/资源文件函数.png" width="400" alt="资源路径生成器"></td>
+    <td><img src="preview/自定义配置.png" width="400" alt="自定义裁剪配置"></td>
+  </tr>
+</table>
 
 ---
 
@@ -75,7 +85,7 @@
 
 ```bash
 # 克隆项目
-git https://github.com/torinaViolet/PyPackager.git
+git clone https://github.com/torinaViolet/PyPackager.git
 cd PyPackager
 
 # 创建虚拟环境 (推荐)
@@ -116,6 +126,15 @@ pip install nuitka
 4. **设置选项** — 在「⚙ 构建选项」配置打包模式、引擎等
 5. **开始构建** — 点击「🔨 开始构建」，在控制台查看实时输出
 
+<details>
+<summary>📷 查看操作截图</summary>
+
+| 依赖管理面板 | 构建选项面板 |
+|:---:|:---:|
+| <img src="preview/依赖管理.png" width="380"> | <img src="preview/构建选项.png" width="380"> |
+
+</details>
+
 ### 大型库裁剪
 
 如果你的项目使用了 PySide6、PyTorch 等大型库：
@@ -128,6 +147,13 @@ pip install nuitka
 
 > 💡 以 PySide6 为例，完整打包约 200MB，裁剪后可降至 20-40MB
 
+<details>
+<summary>📷 查看操作截图</summary>
+
+<img src="preview/库裁剪.png" width="700" alt="库裁剪面板">
+
+</details>
+
 ### 自定义库裁剪配置
 
 针对未内置的库，你可以在「✂️ 库裁剪」面板点击「➕ 自定义库配置」：
@@ -137,6 +163,13 @@ pip install nuitka
 3. 手动补充各模块的大小估算和依赖关系
 4. 点击「🚀 生成并注册」
 5. 配置可导出为 JSON，方便分享和复用
+
+<details>
+<summary>📷 查看操作截图</summary>
+
+<img src="preview/自定义配置.png" width="700" alt="自定义裁剪配置">
+
+</details>
 
 ### 资源文件打包
 
@@ -154,6 +187,15 @@ from utils.resource_helper import resource_path
 logo = resource_path("assets/logo.png")
 config = resource_path("data/config.json")
 ```
+
+<details>
+<summary>📷 查看操作截图</summary>
+
+| 资源文件面板 | resource_path 生成器 |
+|:---:|:---:|
+| <img src="preview/资源文件.png" width="380"> | <img src="preview/资源文件函数.png" width="380"> |
+
+</details>
 
 ---
 
