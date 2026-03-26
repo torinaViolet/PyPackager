@@ -20,6 +20,53 @@ from utils.constants import (
 from utils.process_runner import ProcessRunner
 
 
+def _is_frozen() -> bool:
+    """判断当前是否在 PyInstaller 打包后的环境中运行。"""
+    return getattr(sys, 'frozen', False)
+
+
+def _find_system_python() -> str:
+    """
+    查找系统中可用的 Python 解释器路径。
+    打包后 sys.executable 指向 exe 自身，不能用来调用 PyInstaller/Nuitka，
+    需要找到真正的 python.exe。
+    """
+    import shutil
+
+    # 1. 优先从 PATH 中查找
+    for name in ("python", "python3"):
+        path = shutil.which(name)
+        if path:
+            # 确保找到的不是自身
+            try:
+                real = os.path.realpath(path)
+                if real != os.path.realpath(sys.executable):
+                    return path
+            except Exception:
+                return path
+
+    # 2. Windows: 尝试 py launcher
+    if sys.platform == "win32":
+        py = shutil.which("py")
+        if py:
+            return py
+
+    # 3. 常见安装路径 (Windows)
+    if sys.platform == "win32":
+        import glob
+        patterns = [
+            os.path.expandvars(r"%LOCALAPPDATA%\Programs\Python\Python*\python.exe"),
+            r"C:\Python*\python.exe",
+            os.path.expandvars(r"%USERPROFILE%\AppData\Local\Programs\Python\Python*\python.exe"),
+        ]
+        for pattern in patterns:
+            matches = sorted(glob.glob(pattern), reverse=True)
+            if matches:
+                return matches[0]
+
+    return ""
+
+
 class Builder(QObject):
     """
     构建引擎。
@@ -40,6 +87,7 @@ class Builder(QObject):
         self._runner = ProcessRunner(self)
         self._state = BUILD_IDLE
         self._exclusion_plan: Optional[ExclusionPlan] = None
+        self._project_python: str = ""  # 项目虚拟环境的 Python 路径
 
         # 连接进程信号
         self._runner.output_received.connect(self._on_output)
@@ -60,6 +108,13 @@ class Builder(QObject):
         """设置智能排除方案。"""
         self._exclusion_plan = plan
 
+    def set_project_python(self, python_path: str):
+        """
+        设置项目虚拟环境的 Python 解释器路径。
+        打包环境下优先使用此路径来执行构建命令。
+        """
+        self._project_python = python_path
+
     def generate_command(self) -> Tuple[str, List[str]]:
         """
         根据当前配置生成构建命令。
@@ -74,9 +129,35 @@ class Builder(QObject):
         else:
             raise ValueError(f"不支持的打包引擎: {engine}")
 
+    def _get_python_executable(self) -> str:
+        """
+        获取用于构建的 Python 解释器路径。
+        优先级:
+          1. 项目虚拟环境的 Python（如果已设置且有效）
+          2. 开发环境下使用 sys.executable
+3. 打包环境下从系统 PATH 查找 python
+        """
+        # 1. 优先使用项目虚拟环境的 Python
+        if self._project_python and os.path.isfile(self._project_python):
+            return self._project_python
+
+        # 2. 开发环境下直接使用当前解释器
+        if not _is_frozen():
+            return sys.executable
+
+        # 3. 打包环境下查找系统 Python
+        python = _find_system_python()
+        if not python:
+            raise ValueError(
+                "未找到系统 Python 解释器!\n"
+                "PyPackager 打包运行时需要系统安装的 Python 来执行构建。\n"
+                "请确保 Python 已安装并添加到 PATH 环境变量中。"
+            )
+        return python
+
     def _generate_pyinstaller_cmd(self) -> Tuple[str, List[str]]:
         """生成 PyInstaller 命令。"""
-        program = sys.executable
+        program = self._get_python_executable()
         args = ["-m", "PyInstaller"]
 
         script = self._config.get("entry.script", "")
@@ -206,7 +287,7 @@ class Builder(QObject):
 
     def _generate_nuitka_cmd(self) -> Tuple[str, List[str]]:
         """生成 Nuitka 命令。"""
-        program = sys.executable
+        program = self._get_python_executable()
         args = ["-m", "nuitka"]
 
         script = self._config.get("entry.script", "")

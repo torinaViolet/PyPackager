@@ -1,10 +1,10 @@
-"""
-PyPackager — Python 项目可视化打包工具
+"""PyPackager — Python 项目可视化打包工具
 入口文件
 """
 
 import sys
 import os
+import multiprocessing
 
 # 确保项目根目录在 Python 路径中
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -45,4 +45,6 @@ def main():
 
 
 if __name__ == "__main__":
+    # Windows 打包后子进程支持（防止 exe 递归启动）
+    multiprocessing.freeze_support()
     main()

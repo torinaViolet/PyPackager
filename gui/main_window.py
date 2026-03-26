@@ -223,6 +223,8 @@ class MainWindow(QMainWindow):
             self.console_output.set_python_path(python_path)
             # 终端也激活虚拟环境（pip/python 命令使用项目环境）
             self.console_output.set_venv_path(venv_path)
+            # 构建引擎也使用虚拟环境的 Python（PyInstaller/Nuitka 通常安装在虚拟环境中）
+            self._builder.set_project_python(python_path)
             self.console_output.append_info(
                 f"检测到{venv_type}虚拟环境: {venv_path}"
             )
